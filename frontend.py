@@ -1,5 +1,5 @@
 import streamlit as st
-from backend import chatbot
+from backend import chatbot, retrieve_all_threads
 from langchain_core.messages import HumanMessage
 import uuid
 
@@ -46,10 +46,21 @@ if "thread_id" not in st.session_state:
     st.session_state["thread_id"] = generate_thread_id()
 
 if "chat_threads" not in st.session_state:
-    st.session_state['chat_threads'] = []
+    st.session_state['chat_threads'] = retrieve_all_threads()
 
 if "chat_titles" not in st.session_state:
     st.session_state["chat_titles"] = {}
+    
+    # Re-derive titles for all threads loaded from DB
+    for thread_id in st.session_state["chat_threads"]:
+        thread_id_str = str(thread_id)
+        if thread_id_str not in st.session_state["chat_titles"]:
+            messages = load_conversation(thread_id)
+            for msg in messages:
+                if isinstance(msg, HumanMessage):
+                    title = generate_title(msg.content)
+                    st.session_state["chat_titles"][thread_id_str] = title
+                    break
 
 add_thread(st.session_state["thread_id"])
 

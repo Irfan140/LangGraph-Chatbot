@@ -136,7 +136,15 @@ if user_input:
         title = generate_title(user_input)
         st.session_state["chat_titles"][thread_id_str] = title
 
-    CONFIG = {"configurable": {"thread_id": st.session_state["thread_id"]}}
+    CONFIG = {
+        "configurable": {"thread_id": st.session_state["thread_id"]},
+        # For langSmith thread segregation of traces
+        "metadata": {
+            "thread_id": st.session_state["thread_id"]
+        },
+        # Custom name 
+        "run_name": "chat_turn",
+    }
 
     #  add assistant message to  message_history
     with st.chat_message('assistant'):

@@ -26,6 +26,16 @@ def load_conversation(thread_id):
     # Check if messages key exists in state values, return empty list if not
     return state.values.get('messages', [])
 
+def generate_title(user_input):
+    title_prompt = f"Generate a very short title (max 5 words) for a conversation that starts with this message: '{user_input}'. Reply with ONLY the title, no punctuation, no quotes."
+    
+    response = chatbot.invoke(
+        {"messages": [HumanMessage(content=title_prompt)]},
+        config={"configurable": {"thread_id": "title-gen"}}  # isolated thread so it doesn't pollute history
+    )
+    
+    return response["messages"][-1].content.strip()
+
 # *************************** Session Setup **************************************************
 
 # st.session_state ->  it is a dict where the data persists even if we enter in the text box 
@@ -37,6 +47,9 @@ if "thread_id" not in st.session_state:
 
 if "chat_threads" not in st.session_state:
     st.session_state['chat_threads'] = []
+
+if "chat_titles" not in st.session_state:
+    st.session_state["chat_titles"] = {}
 
 add_thread(st.session_state["thread_id"])
 
@@ -50,7 +63,10 @@ if st.sidebar.button("New chat"):
 st.sidebar.header("Past Conversations")
 
 for thread_id in st.session_state['chat_threads'][::-1]:
-    if st.sidebar.button(str(thread_id)):
+    thread_id_str = str(thread_id)
+    title = st.session_state["chat_titles"].get(thread_id_str, "New Chat")
+
+    if st.sidebar.button(title, key=thread_id_str):
         st.session_state['thread_id'] = thread_id
         messages = load_conversation(thread_id)
 
@@ -71,7 +87,7 @@ for thread_id in st.session_state['chat_threads'][::-1]:
 # load the conversation history
 for message in st.session_state['message_history']:
     with st.chat_message(message['role']):
-        st.text(message['content'])
+        st.markdown(message['content'])
 
 
 user_input = st.chat_input('Type here')
@@ -81,7 +97,13 @@ if user_input:
     #  add the  user message to message_history
     st.session_state['message_history'].append({'role': 'user', 'content': user_input})
     with st.chat_message('user'):
-        st.text(user_input)
+        st.markdown(user_input)
+
+    #  Generate title only on first message of this thread
+    thread_id_str = str(st.session_state["thread_id"])
+    if thread_id_str not in st.session_state["chat_titles"]:
+        title = generate_title(user_input)
+        st.session_state["chat_titles"][thread_id_str] = title
 
     CONFIG = {"configurable": {"thread_id": st.session_state["thread_id"]}}
 

@@ -44,3 +44,18 @@ def retrieve_all_threads():
         if thread_id != "title-gen":  # ← exclude internal title thread
             all_threads.add(thread_id)
     return list(all_threads)
+
+
+def delete_all_threads():
+    cursor = connection.cursor()
+    
+    # Get all existing table names first
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+    existing_tables = {row[0] for row in cursor.fetchall()}
+    
+    # Only delete from tables that actually exist
+    for table in ["checkpoints", "checkpoint_writes", "checkpoint_blobs"]:
+        if table in existing_tables:
+            cursor.execute(f"DELETE FROM {table}")
+    
+    connection.commit()

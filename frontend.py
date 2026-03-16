@@ -1,5 +1,5 @@
 import streamlit as st
-from backend import chatbot, retrieve_all_threads
+from backend import chatbot, retrieve_all_threads, delete_all_threads
 from langchain_core.messages import HumanMessage
 import uuid
 
@@ -70,6 +70,26 @@ st.sidebar.title("Chatbot")
 
 if st.sidebar.button("New chat"):
     reset_chat()
+
+if st.sidebar.button("🗑️ Clear All Chats"):
+    st.session_state["confirm_clear"] = True
+
+if st.session_state.get("confirm_clear"):
+    st.sidebar.warning("Are you sure? This cannot be undone.")
+    col1, col2 = st.sidebar.columns(2)
+    
+    if col1.button("Yes, clear"):
+        delete_all_threads()
+        st.session_state["chat_threads"] = []
+        st.session_state["chat_titles"] = {}
+        st.session_state["message_history"] = []
+        st.session_state["thread_id"] = generate_thread_id()
+        st.session_state["confirm_clear"] = False
+        st.rerun()
+    
+    if col2.button("Cancel"):
+        st.session_state["confirm_clear"] = False
+        st.rerun()
 
 st.sidebar.header("Past Conversations")
 
